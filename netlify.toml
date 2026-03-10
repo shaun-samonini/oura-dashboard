@@ -1,0 +1,45 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Serve dashboard at root
+[[redirects]]
+  from = "/"
+  to = "/oura-dashboard.html"
+  status = 200
+
+# Serve coach page
+[[redirects]]
+  from = "/coach"
+  to = "/daily-coach.html"
+  status = 200
+
+[[redirects]]
+  from = "/coach/"
+  to = "/daily-coach.html"
+  status = 200
+
+# Auth endpoint
+[[redirects]]
+  from = "/api/auth"
+  to = "/.netlify/functions/auth"
+  status = 200
+
+# Route API calls to serverless functions
+[[redirects]]
+  from = "/api/journal"
+  to = "/.netlify/functions/journal"
+  status = 200
+
+[[redirects]]
+  from = "/api/weight-log"
+  to = "/.netlify/functions/weight-log"
+  status = 200
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/oura-proxy"
+  status = 200

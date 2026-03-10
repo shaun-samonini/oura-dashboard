@@ -1,0 +1,26 @@
+# Python scripts (only needed locally)
+*.py
+*.pyc
+__pycache__
+
+# Local data and logs
+data/
+logs/
+*.log
+
+# macOS
+.DS_Store
+
+# Local setup files
+*.command
+setup-autostart.sh
+health-profile.md
+
+# Icons source
+generate-icons.py
+
+# Dependencies (bundled by functions separately)
+node_modules/
+
+# Backups
+*.backup.md

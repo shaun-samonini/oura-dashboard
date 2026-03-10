@@ -1,0 +1,2848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shaun's Daily Coach</title>
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f0f23">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Coach">
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
+    <script src="/pin-gate.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e4e6eb;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        /* ── HEADER ── */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px 0;
+            border-bottom: 2px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4ecdfc, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .header-date { font-size: 1rem; color: #a0a6b1; margin-bottom: 12px; }
+
+        .header-nav {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .nav-link {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .nav-link.active {
+            background: rgba(78, 205, 196, 0.2);
+            border: 1px solid rgba(78, 205, 196, 0.5);
+            color: #4ecdfc;
+        }
+
+        .nav-link:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a0a6b1;
+        }
+
+        .nav-link:hover { background: rgba(78, 205, 196, 0.15); color: #4ecdfc; }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .data-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            margin-top: 8px;
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(78, 205, 196, 0.15);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4ecdfc;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title .icon { font-size: 1.2rem; }
+
+        /* ── READINESS ROW ── */
+        .readiness-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .readiness-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(78, 205, 196, 0.12);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .readiness-card .label {
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .readiness-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .readiness-card .sub {
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            margin-top: 4px;
+        }
+
+        .score-green { color: #34d399; }
+        .score-yellow { color: #fbbf24; }
+        .score-orange { color: #fb923c; }
+        .score-red { color: #f87171; }
+        .score-muted { color: #a0a6b1; }
+
+        /* ── RECOVERY STATUS ── */
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            height: 10px;
+            margin: 10px 0 16px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.5s ease;
+        }
+
+        .recovery-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .recovery-stat {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .recovery-stat .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #4ecdfc;
+        }
+
+        .recovery-stat .stat-label {
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            margin-top: 4px;
+        }
+
+        .milestone-list { list-style: none; }
+
+        .milestone-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+        }
+
+        .milestone-item:last-child { border-bottom: none; }
+
+        .milestone-check {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .milestone-check.done { background: rgba(52, 211, 153, 0.2); color: #34d399; }
+        .milestone-check.pending { background: rgba(160, 166, 177, 0.15); color: #a0a6b1; }
+
+        .milestone-detail {
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            margin-left: auto;
+        }
+
+        /* ── WORKOUT SECTION ── */
+        .workout-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .workout-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .intensity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .workout-reason {
+            font-size: 0.85rem;
+            color: #a0a6b1;
+            margin-bottom: 16px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border-left: 3px solid #4ecdfc;
+        }
+
+        .workout-description {
+            font-size: 0.9rem;
+            color: #b0b7c3;
+            margin-bottom: 16px;
+        }
+
+        .workout-section-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #4ecdfc;
+            margin: 16px 0 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(78, 205, 196, 0.15);
+        }
+
+        .exercise-list { list-style: none; }
+
+        .exercise-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+
+        .exercise-item:hover { background: rgba(255, 255, 255, 0.03); }
+
+        .exercise-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .exercise-detail {
+            font-size: 0.8rem;
+            color: #a0a6b1;
+            text-align: right;
+            min-width: 120px;
+        }
+
+        .exercise-note {
+            font-size: 0.75rem;
+            color: #fbbf24;
+            margin-top: 2px;
+        }
+
+        .workout-notes {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: rgba(251, 191, 36, 0.08);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #fbbf24;
+        }
+
+        .workout-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: rgba(78, 205, 196, 0.2);
+            border: 1px solid rgba(78, 205, 196, 0.5);
+            color: #4ecdfc;
+        }
+
+        .btn-primary:hover {
+            background: rgba(78, 205, 196, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #a0a6b1;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e4e6eb;
+        }
+
+        /* ── NUTRITION SECTION ── */
+        .macro-bar-container {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .macro-item {
+            flex: 1;
+            min-width: 120px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .macro-item .macro-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .macro-item .macro-label {
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .macro-calories { color: #4ecdfc; }
+        .macro-protein { color: #f87171; }
+        .macro-carbs { color: #fbbf24; }
+        .macro-fat { color: #a78bfa; }
+
+        .meal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .meal-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .meal-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .meal-card-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .meal-card-time {
+            font-size: 0.75rem;
+            color: #4ecdfc;
+        }
+
+        .meal-card-cal {
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            background: rgba(78, 205, 196, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .meal-ingredients {
+            font-size: 0.8rem;
+            color: #b0b7c3;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .meal-macros-row {
+            display: flex;
+            gap: 8px;
+            font-size: 0.7rem;
+            flex-wrap: wrap;
+        }
+
+        .meal-macro {
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .meal-ibs-note {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: #fbbf24;
+            padding: 4px 8px;
+            background: rgba(251, 191, 36, 0.08);
+            border-radius: 6px;
+        }
+
+        .peri-workout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .peri-card {
+            background: rgba(78, 205, 196, 0.06);
+            border: 1px solid rgba(78, 205, 196, 0.12);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .peri-card .peri-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4ecdfc;
+            margin-bottom: 4px;
+        }
+
+        .peri-card .peri-time {
+            font-size: 0.7rem;
+            color: #a0a6b1;
+            margin-bottom: 6px;
+        }
+
+        .peri-card .peri-suggestion {
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .peri-card .peri-note {
+            font-size: 0.75rem;
+            color: #a0a6b1;
+        }
+
+        .supplement-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .supplement-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 12px 16px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .supplement-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .supplement-dose {
+            font-size: 0.8rem;
+            color: #4ecdfc;
+        }
+
+        .supplement-timing {
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            margin-top: 4px;
+        }
+
+        .hydration-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(59, 130, 246, 0.08);
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+
+        .hydration-bar .hydra-icon { font-size: 1.3rem; }
+        .hydration-bar .hydra-target { font-size: 0.95rem; font-weight: 600; color: #60a5fa; }
+        .hydration-bar .hydra-note { font-size: 0.8rem; color: #a0a6b1; }
+
+        .condition-tips {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+        }
+
+        .condition-tip {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 0.8rem;
+            color: #b0b7c3;
+            line-height: 1.5;
+        }
+
+        .condition-tip strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #e4e6eb;
+        }
+
+        /* ── WEEKLY SCHEDULE ── */
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .day-cell {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .day-cell.today {
+            border-color: #4ecdfc;
+            background: rgba(78, 205, 196, 0.08);
+        }
+
+        .day-cell.past { opacity: 0.5; }
+
+        .day-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #a0a6b1;
+            text-transform: uppercase;
+        }
+
+        .day-date {
+            font-size: 0.7rem;
+            color: #a0a6b1;
+            margin-bottom: 8px;
+        }
+
+        .day-icon { font-size: 1.5rem; margin-bottom: 4px; }
+
+        .day-workout-name {
+            font-size: 0.7rem;
+            color: #e4e6eb;
+            line-height: 1.3;
+        }
+
+        .day-intensity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin: 6px auto 0;
+        }
+
+        /* ── CHART ── */
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 8px;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 20px;
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .footer a { color: #4ecdfc; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* ── LOADING ── */
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0a6b1;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(78, 205, 196, 0.2);
+            border-top-color: #4ecdfc;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── RESTRICTIONS ── */
+        .restrictions-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .restriction-badge {
+            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: rgba(248, 113, 113, 0.12);
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.2);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .readiness-grid { grid-template-columns: repeat(2, 1fr); }
+            .week-grid { grid-template-columns: repeat(4, 1fr); }
+            .peri-workout { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.6rem; }
+            .container { padding: 0 4px; }
+        }
+
+        @media (max-width: 480px) {
+            .readiness-grid { grid-template-columns: 1fr 1fr; }
+            .week-grid { grid-template-columns: repeat(4, 1fr); }
+            .macro-bar-container { flex-direction: column; }
+        }
+
+        /* ── DAY PICKER ── */
+        .day-picker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 24px;
+            padding: 10px 0;
+        }
+
+        .day-pick-arrow {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a0a6b1;
+            font-size: 1.4rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .day-pick-arrow:hover {
+            background: rgba(78, 205, 252, 0.15);
+            color: #4ecdfc;
+            border-color: rgba(78, 205, 252, 0.3);
+        }
+
+        .day-pick-days {
+            display: flex;
+            gap: 4px;
+        }
+
+        .day-pick-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #a0a6b1;
+            padding: 6px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            min-width: 54px;
+            transition: all 0.2s;
+            font-size: 0.75rem;
+        }
+
+        .day-pick-btn:hover {
+            background: rgba(78, 205, 252, 0.1);
+            border-color: rgba(78, 205, 252, 0.25);
+            color: #e4e6eb;
+        }
+
+        .day-pick-btn.active {
+            background: rgba(78, 205, 252, 0.2);
+            border-color: #4ecdfc;
+            color: #4ecdfc;
+            font-weight: 600;
+        }
+
+        .day-pick-btn.today-marker {
+            border-color: rgba(78, 205, 252, 0.4);
+        }
+
+        .day-pick-btn .dp-day { font-weight: 600; font-size: 0.85rem; }
+        .day-pick-btn .dp-date { opacity: 0.7; }
+
+        .date-notice {
+            text-align: center;
+            padding: 10px 16px;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            background: rgba(78, 205, 252, 0.08);
+            border: 1px solid rgba(78, 205, 252, 0.2);
+            color: #4ecdfc;
+        }
+
+        .date-notice .back-link {
+            color: #4ecdfc;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        /* ── Journal Check-In ── */
+        .journal-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .journal-toggle {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.04);
+            color: #a0a6b1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .journal-toggle:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .journal-toggle.active-symptom {
+            background: rgba(248, 113, 113, 0.15);
+            border-color: rgba(248, 113, 113, 0.5);
+            color: #f87171;
+        }
+
+        .journal-toggle.active-good {
+            background: rgba(52, 211, 153, 0.15);
+            border-color: rgba(52, 211, 153, 0.5);
+            color: #34d399;
+        }
+
+        .feeling-pills {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .feeling-pill {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.04);
+            color: #a0a6b1;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feeling-pill:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .feeling-pill.selected {
+            border-width: 2px;
+        }
+
+        .feeling-pill.sel-1 { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #ef4444; }
+        .feeling-pill.sel-2 { background: rgba(245, 158, 11, 0.2); border-color: #f59e0b; color: #f59e0b; }
+        .feeling-pill.sel-3 { background: rgba(234, 179, 8, 0.2); border-color: #eab308; color: #eab308; }
+        .feeling-pill.sel-4 { background: rgba(52, 211, 153, 0.2); border-color: #34d399; color: #34d399; }
+        .feeling-pill.sel-5 { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #10b981; }
+
+        .journal-notes-input {
+            width: 100%;
+            min-height: 70px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #e4e6eb;
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            margin-bottom: 16px;
+        }
+
+        .journal-notes-input::placeholder {
+            color: #666;
+        }
+
+        .journal-notes-input:focus {
+            outline: none;
+            border-color: rgba(78, 205, 196, 0.5);
+        }
+
+        .journal-save-btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            background: rgba(78, 205, 196, 0.2);
+            border: 1px solid rgba(78, 205, 196, 0.5);
+            color: #4ecdfc;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .journal-save-btn:hover {
+            background: rgba(78, 205, 196, 0.3);
+        }
+
+        .journal-compact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .journal-compact-feeling {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .journal-compact-symptoms {
+            font-size: 0.85rem;
+            color: #a0a6b1;
+        }
+
+        .journal-compact-notes {
+            font-size: 0.85rem;
+            color: #b0b7c3;
+            font-style: italic;
+            width: 100%;
+        }
+
+        .journal-edit-btn {
+            font-size: 0.8rem;
+            color: #4ecdfc;
+            background: none;
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 6px;
+            padding: 4px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .journal-edit-btn:hover {
+            background: rgba(78, 205, 196, 0.1);
+        }
+
+        .journal-section-label {
+            font-size: 0.75rem;
+            color: #7a8a9a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .journal-history-item {
+            font-size: 0.8rem;
+            color: #a0a6b1;
+            padding: 6px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .journal-history-date {
+            color: #7a8a9a;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .journal-history-notes {
+            color: #888;
+            font-style: italic;
+        }
+
+        /* ── Recommendation Banner ── */
+        .recommendation-banner {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(20, 184, 166, 0.06) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-left: 4px solid #f59e0b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 12px;
+        }
+
+        .recommendation-banner h3 {
+            color: #f59e0b;
+            font-size: 1rem;
+            margin: 0 0 10px 0;
+        }
+
+        .recommendation-summary {
+            color: #c9d1d9;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+
+        .recommendation-changes {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .recommendation-change {
+            color: #8b949e;
+            font-size: 0.85rem;
+            padding-left: 12px;
+            position: relative;
+        }
+
+        .recommendation-change::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #f59e0b;
+        }
+
+        .recommendation-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .recommendation-btn {
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .recommendation-btn.accept {
+            background: rgba(20, 184, 166, 0.15);
+            color: #14b8a6;
+            border: 1px solid rgba(20, 184, 166, 0.3);
+        }
+
+        .recommendation-btn.accept:hover {
+            background: rgba(20, 184, 166, 0.25);
+        }
+
+        .recommendation-btn.decline {
+            background: rgba(139, 148, 158, 0.1);
+            color: #8b949e;
+            border: 1px solid rgba(139, 148, 158, 0.2);
+        }
+
+        .recommendation-btn.decline:hover {
+            background: rgba(139, 148, 158, 0.2);
+        }
+
+        .journal-adjusted-note {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #f59e0b;
+            font-size: 0.82rem;
+            margin-bottom: 12px;
+        }
+
+        /* ── GROCERY LIST ── */
+        .grocery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .grocery-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #e6edf3;
+            font-weight: 400;
+        }
+        .grocery-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .grocery-btn {
+            background: rgba(78, 205, 196, 0.1);
+            color: #4ecdc4;
+            border: 1px solid rgba(78, 205, 196, 0.2);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .grocery-btn:hover { background: rgba(78, 205, 196, 0.2); }
+        .grocery-btn.copied {
+            background: rgba(78, 205, 196, 0.3);
+            color: #fff;
+        }
+        .grocery-nav-btn {
+            background: none;
+            border: 1px solid rgba(139, 148, 158, 0.2);
+            color: #8b949e;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .grocery-nav-btn:hover { color: #e6edf3; border-color: rgba(139, 148, 158, 0.4); }
+
+        .grocery-category {
+            margin-bottom: 16px;
+        }
+        .grocery-category-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #4ecdc4;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(78, 205, 196, 0.1);
+        }
+        .grocery-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 0;
+            font-size: 0.88rem;
+            color: #c9d1d9;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .grocery-item:hover { color: #e6edf3; }
+        .grocery-item.checked {
+            opacity: 0.4;
+            text-decoration: line-through;
+        }
+        .grocery-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            border-radius: 4px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .grocery-item.checked .grocery-checkbox {
+            background: rgba(78, 205, 196, 0.3);
+            border-color: #4ecdc4;
+        }
+        .grocery-item.checked .grocery-checkbox::after {
+            content: '✓';
+            color: #4ecdc4;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .grocery-item-text { flex: 1; }
+
+        .grocery-meals-toggle {
+            background: none;
+            border: none;
+            color: #8b949e;
+            font-size: 0.82rem;
+            cursor: pointer;
+            padding: 12px 0 4px;
+            text-align: left;
+            width: 100%;
+        }
+        .grocery-meals-toggle:hover { color: #c9d1d9; }
+        .grocery-meals-list {
+            font-size: 0.82rem;
+            color: #8b949e;
+            line-height: 1.6;
+            padding-top: 8px;
+        }
+        .grocery-meals-list .meal-day {
+            display: flex;
+            gap: 8px;
+        }
+        .grocery-meals-list .day-label {
+            color: #4ecdc4;
+            font-weight: 500;
+            min-width: 35px;
+        }
+
+        .grocery-holiday {
+            text-align: center;
+            padding: 40px 20px;
+            color: #8b949e;
+            font-size: 1rem;
+        }
+        .grocery-holiday .holiday-emoji { font-size: 2.5rem; margin-bottom: 12px; }
+        .grocery-holiday .holiday-text { color: #c9d1d9; }
+
+        /* ── WEIGHT PROGRESS ── */
+        .weight-progress-bar {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            height: 14px;
+            margin: 12px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .weight-progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #4ecdfc, #10b981);
+            transition: width 0.8s ease;
+        }
+        .weight-progress-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        .weight-progress-marker {
+            position: absolute;
+            top: -2px;
+            width: 2px;
+            height: 18px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 1px;
+        }
+        .weight-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 10px;
+            margin: 14px 0;
+        }
+        .weight-stat {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .weight-stat .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #4ecdfc;
+        }
+        .weight-stat .stat-value.green { color: #10b981; }
+        .weight-stat .stat-label {
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            margin-top: 4px;
+        }
+        .weight-input-field {
+            width: 120px;
+            padding: 12px;
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 8px;
+            color: #4ecdfc;
+            outline: none;
+        }
+        .weight-input-field:focus {
+            border-color: #4ecdfc;
+            box-shadow: 0 0 0 2px rgba(78, 205, 252, 0.15);
+        }
+        .weight-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #a0a6b1;
+            margin-top: 4px;
+        }
+        .weight-reminder {
+            font-size: 0.8rem;
+            color: #fbbf24;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-nav">
+                <a href="/" class="nav-link">📊 Dashboard</a>
+                <a href="/coach" class="nav-link active">🏋️ Coach</a>
+            </div>
+            <h1>Shaun's Daily Coach</h1>
+            <div class="header-date" id="header-date"></div>
+            <div id="phase-badge"></div>
+            <div id="data-badge"></div>
+        </div>
+
+        <!-- DAY PICKER -->
+        <div class="day-picker" id="day-picker" style="display: none;">
+            <button class="day-pick-arrow" id="day-prev">‹</button>
+            <div class="day-pick-days" id="day-pick-days"></div>
+            <button class="day-pick-arrow" id="day-next">›</button>
+        </div>
+
+        <!-- LOADING STATE -->
+        <div id="loading" class="loading-state">
+            <div class="loading-spinner"></div>
+            <div>Loading your Oura data...</div>
+        </div>
+
+        <!-- MAIN CONTENT (hidden until loaded) -->
+        <div id="main-content" style="display: none;">
+
+            <!-- Viewing future/past notice -->
+            <div id="date-notice" class="date-notice" style="display: none;"></div>
+
+            <!-- READINESS ROW -->
+            <div class="readiness-grid" id="readiness-grid"></div>
+
+            <!-- RECOVERY STATUS -->
+            <div class="card" id="recovery-card"></div>
+
+            <!-- WEIGHT PROGRESS -->
+            <div class="card" id="weight-card"></div>
+
+            <!-- DAILY CHECK-IN JOURNAL -->
+            <div class="card" id="journal-card"></div>
+            <div id="journal-recommendation"></div>
+
+            <!-- TODAY'S WORKOUT -->
+            <div class="card" id="workout-card"></div>
+
+            <!-- TODAY'S NUTRITION -->
+            <div class="card" id="nutrition-card"></div>
+
+            <!-- WEEKLY SCHEDULE -->
+            <div class="card" id="schedule-card"></div>
+
+            <!-- WEEKLY GROCERY LIST -->
+            <div class="card" id="grocery-card"></div>
+
+            <!-- HRV TREND -->
+            <div class="card">
+                <div class="card-title"><span class="icon">📈</span> 7-Day HRV Trend</div>
+                <div class="chart-container">
+                    <canvas id="hrv-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <a href="/">← Back to Dashboard</a> · Updated <span id="footer-time"></span>
+            <br>Not medical advice. Always consult a healthcare professional.
+        </div>
+    </div>
+
+    <!-- ENGINE -->
+    <script src="coach-engine.js"></script>
+
+    <!-- INIT -->
+    <script>
+        // ── STATE ──
+        let currentOuraData = null;
+        let currentPhase = null;
+        let currentWorkout = null;
+        let alternativeIndex = 0;
+
+        // ── SCORE COLOR ──
+        function scoreClass(score) {
+            if (score >= 85) return 'score-green';
+            if (score >= 70) return 'score-yellow';
+            if (score >= 55) return 'score-orange';
+            if (score > 0) return 'score-red';
+            return 'score-muted';
+        }
+
+        function stressIcon(level) {
+            const map = {
+                'restored': { icon: '😌', label: 'Restored', cls: 'score-green' },
+                'normal': { icon: '😊', label: 'Normal', cls: 'score-yellow' },
+                'stressful': { icon: '😰', label: 'Stressed', cls: 'score-red' },
+            };
+            return map[level] || { icon: '❓', label: level || 'N/A', cls: 'score-muted' };
+        }
+
+        // ── RENDER: HEADER ──
+        function renderHeader(phase, ouraData) {
+            document.getElementById('header-date').textContent = formatDateLong(new Date());
+
+            const badge = document.getElementById('phase-badge');
+            let badgeHtml = `<span class="phase-badge" style="background: ${phase.colorBg}; color: ${phase.color}; border: 1px solid ${phase.color};">${phase.name} — Day ${phase.elapsedDays}/${phase.totalDays}</span>`;
+
+            if (isHoliday()) {
+                const info = getHolidayInfo();
+                badgeHtml += ` <span class="phase-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b;">🌴 ${info.location} — Day ${info.daysIn}/${info.totalDays}</span>`;
+            }
+
+            badge.innerHTML = badgeHtml;
+
+            if (ouraData.usingYesterday) {
+                document.getElementById('data-badge').innerHTML = `<span class="data-badge">⚠ Using yesterday's data (${ouraData.dataDate})</span>`;
+            }
+        }
+
+        // ── RENDER: READINESS ──
+        function renderReadiness(ouraData) {
+            const stress = stressIcon(ouraData.stressLevel);
+            const hrvGap = COACH_CONFIG.baselines.hrvBalance - ouraData.hrvBalance;
+
+            document.getElementById('readiness-grid').innerHTML = `
+                <div class="readiness-card">
+                    <div class="label">Readiness</div>
+                    <div class="value ${scoreClass(ouraData.readinessScore)}">${ouraData.readinessScore || '—'}</div>
+                    <div class="sub">out of 100</div>
+                </div>
+                <div class="readiness-card">
+                    <div class="label">Sleep Score</div>
+                    <div class="value ${scoreClass(ouraData.sleepScore)}">${ouraData.sleepScore || '—'}</div>
+                    <div class="sub">${ouraData.totalSleepSeconds > 0 ? (ouraData.totalSleepSeconds / 3600).toFixed(1) + ' hrs' : '—'}</div>
+                </div>
+                <div class="readiness-card">
+                    <div class="label">HRV Balance</div>
+                    <div class="value ${ouraData.hrvBalance >= 80 ? 'score-green' : ouraData.hrvBalance >= 65 ? 'score-yellow' : 'score-orange'}">${ouraData.hrvBalance || '—'}</div>
+                    <div class="sub">${ouraData.hrvBalance > 0 ? (hrvGap > 0 ? hrvGap + ' below baseline' : 'At baseline!') : 'baseline: 48ms'}</div>
+                </div>
+                <div class="readiness-card">
+                    <div class="label">Stress</div>
+                    <div class="value" style="font-size: 2rem;">${stress.icon}</div>
+                    <div class="sub ${stress.cls}">${stress.label}</div>
+                </div>
+            `;
+        }
+
+        // ── RENDER: RECOVERY ──
+        function renderRecovery(recovery) {
+            const phase = recovery.phase;
+            let html = `
+                <div class="card-title"><span class="icon">🩺</span> Recovery Status</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-weight: 600; color: ${phase.color};">${phase.name}</span>
+                    <span style="font-size: 0.8rem; color: #a0a6b1;">${recovery.overallPct}% milestones complete</span>
+                </div>
+                <div style="font-size: 0.85rem; color: #a0a6b1; margin-bottom: 8px;">${phase.description}</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: ${phase.progressPct}%; background: ${phase.color};"></div>
+                </div>
+
+                <div class="recovery-stats">
+                    <div class="recovery-stat">
+                        <div class="stat-value">✓</div>
+                        <div class="stat-label">Concussion resolved</div>
+                    </div>
+                    <div class="recovery-stat">
+                        <div class="stat-value">${recovery.hrvGap > 0 ? recovery.hrvGap : '✓'}</div>
+                        <div class="stat-label">${recovery.hrvGap > 0 ? 'HRV gap to 48ms' : 'HRV at baseline'}</div>
+                    </div>
+                    <div class="recovery-stat">
+                        <div class="stat-value">${recovery.sleepDebt > 0 ? recovery.sleepDebt + 'h' : '✓'}</div>
+                        <div class="stat-label">${recovery.sleepDebt > 0 ? 'Sleep debt' : 'Sleep on track'}</div>
+                    </div>
+                    <div class="recovery-stat">
+                        <div class="stat-value">${recovery.antibioticsDone ? '✓' : 'Active'}</div>
+                        <div class="stat-label">Antibiotics</div>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #a0a6b1;">Recovery Milestones</div>
+                <ul class="milestone-list">
+            `;
+
+            recovery.milestones.forEach(m => {
+                html += `
+                    <li class="milestone-item">
+                        <span class="milestone-check ${m.done ? 'done' : 'pending'}">${m.done ? '✓' : '○'}</span>
+                        <span>${m.label}</span>
+                        <span class="milestone-detail">${m.detail}</span>
+                    </li>
+                `;
+            });
+
+            html += '</ul>';
+
+            if (phase.restrictions.length > 0) {
+                html += '<div class="restrictions-list">';
+                phase.restrictions.forEach(r => {
+                    html += `<span class="restriction-badge">⚠ ${r}</span>`;
+                });
+                html += '</div>';
+            }
+
+            document.getElementById('recovery-card').innerHTML = html;
+        }
+
+        // ── RENDER: WORKOUT ──
+        function renderWorkout(workout) {
+            if (!workout) return;
+            const w = workout.workout;
+            const intColor = intensityColor(workout.intensity);
+
+            let html = `
+                <div class="card-title"><span class="icon">🏋️</span> Today's Workout</div>
+            `;
+
+            if (workout.journalSwapped) {
+                html += `<div class="journal-adjusted-note">📝 Workout adjusted based on your check-in</div>`;
+            }
+
+            html += `
+                <div class="workout-header">
+                    <div class="workout-name">
+                        <span>${workout.icon}</span>
+                        <span>${workout.name}</span>
+                    </div>
+                    <span class="intensity-badge" style="background: ${intColor}22; color: ${intColor}; border: 1px solid ${intColor}50;">${intensityLabel(workout.intensity)}</span>
+                </div>
+                <div class="workout-reason">${workout.reason}</div>
+            `;
+
+            if (w.description) {
+                html += `<div class="workout-description">${w.description}${w.targetHR ? ' · Target HR: ' + w.targetHR : ''}${w.duration ? ' · ~' + w.duration + ' min' : ''}</div>`;
+            }
+
+            // Warmup
+            if (w.warmup && w.warmup.length > 0) {
+                html += '<div class="workout-section-label">Warm-Up</div><ul class="exercise-list">';
+                w.warmup.forEach(ex => {
+                    html += renderExerciseItem(ex);
+                });
+                html += '</ul>';
+            }
+
+            // Main exercises
+            if (w.exercises && w.exercises.length > 0) {
+                html += '<div class="workout-section-label">Main Workout</div><ul class="exercise-list">';
+                w.exercises.forEach(ex => {
+                    html += renderExerciseItem(ex);
+                });
+                html += '</ul>';
+            }
+
+            // Cooldown
+            if (w.cooldown && w.cooldown.length > 0) {
+                html += '<div class="workout-section-label">Cool-Down</div><ul class="exercise-list">';
+                w.cooldown.forEach(ex => {
+                    html += renderExerciseItem(ex);
+                });
+                html += '</ul>';
+            }
+
+            // Notes
+            if (w.notes) {
+                html += `<div class="workout-notes">💡 ${w.notes}</div>`;
+            }
+
+            // Swap button
+            if (workout.alternatives && workout.alternatives.length > 0) {
+                html += `
+                    <div class="workout-actions">
+                        <button class="btn btn-primary" onclick="swapWorkout()">🔄 Swap Workout</button>
+                    </div>
+                `;
+            }
+
+            document.getElementById('workout-card').innerHTML = html;
+        }
+
+        // ── RENDER: HOLIDAY WORKOUT ──
+        function renderHolidayWorkout(holidayWorkout) {
+            const info = holidayWorkout.info;
+            let html = `
+                <div class="card-title"><span class="icon">🌴</span> Holiday Movement — ${holidayWorkout.location}</div>
+
+                <div style="background: rgba(78, 205, 252, 0.08); border: 1px solid rgba(78, 205, 252, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                    <div style="font-size: 0.95rem; color: #e4e6eb; line-height: 1.5;">
+                        ${holidayWorkout.mindset}
+                    </div>
+                </div>
+
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; color: #a0a6b1;">Ideas for Today</div>
+                <div style="display: grid; gap: 8px; margin-bottom: 16px;">
+            `;
+
+            holidayWorkout.suggestions.forEach(s => {
+                html += `
+                    <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: flex-start;">
+                        <span style="font-size: 1.3rem;">${s.icon}</span>
+                        <div>
+                            <div style="font-size: 0.9rem; font-weight: 600; color: #e4e6eb;">${s.name}</div>
+                            <div style="font-size: 0.8rem; color: #a0a6b1; line-height: 1.4;">${s.detail}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            // Avoid list
+            html += '<div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #f87171;">Still Avoid</div>';
+            html += '<div style="margin-bottom: 12px;">';
+            holidayWorkout.avoid.forEach(a => {
+                html += `<div style="font-size: 0.8rem; color: #a0a6b1; padding: 4px 0;">⛔ ${a}</div>`;
+            });
+            html += '</div>';
+
+            document.getElementById('workout-card').innerHTML = html;
+        }
+
+        function renderExerciseItem(ex) {
+            let detail = '';
+            if (ex.sets && ex.reps) detail = `${ex.sets} × ${ex.reps}`;
+            else if (ex.sets) detail = `${ex.sets} sets`;
+            else if (ex.reps) detail = `${ex.reps} reps`;
+            else if (ex.duration) detail = ex.duration;
+
+            if (ex.rest) detail += ` · ${ex.rest} rest`;
+
+            let html = `
+                <li class="exercise-item">
+                    <div>
+                        <div class="exercise-name">${ex.name}</div>
+                        ${ex.note ? `<div class="exercise-note">${ex.note}</div>` : ''}
+                    </div>
+                    <div class="exercise-detail">${detail}</div>
+                </li>
+            `;
+            return html;
+        }
+
+        function swapWorkout() {
+            if (!currentWorkout || !currentWorkout.alternatives || currentWorkout.alternatives.length === 0) return;
+            alternativeIndex = (alternativeIndex + 1) % currentWorkout.alternatives.length;
+            const altKey = currentWorkout.alternatives[alternativeIndex];
+            const alt = getAlternativeWorkout(altKey, currentWorkout.intensity);
+            if (alt) {
+                alt.reason = currentWorkout.reason;
+                alt.alternatives = currentWorkout.alternatives;
+                currentWorkout = alt;
+                renderWorkout(currentWorkout);
+            }
+        }
+
+        // ── RENDER: NUTRITION ──
+        function renderNutrition(nutrition) {
+            // Holiday mode — relaxed guidance instead of strict meal plans
+            if (nutrition.isHoliday) {
+                renderHolidayNutrition(nutrition);
+                return;
+            }
+
+            const t = nutrition.targets;
+            let html = `
+                <div class="card-title"><span class="icon">🍽️</span> Today's Nutrition</div>
+
+                <div class="macro-bar-container">
+                    <div class="macro-item">
+                        <div class="macro-value macro-calories">${t.calories}</div>
+                        <div class="macro-label">Calories</div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-value macro-protein">${t.protein}g</div>
+                        <div class="macro-label">Protein</div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-value macro-carbs">${t.carbs}g</div>
+                        <div class="macro-label">Carbs</div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-value macro-fat">${t.fat}g</div>
+                        <div class="macro-label">Fat</div>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.8rem; color: #a0a6b1; margin-bottom: 16px;">
+                    TDEE: ${t.tdee} kcal · Deficit: ${t.deficit} kcal/day · Target loss: ~${t.weeklyLossKg} kg/week
+                </div>
+            `;
+
+            // Recovery notes (Oura-reactive)
+            if (nutrition.recoveryNotes && nutrition.recoveryNotes.length > 0) {
+                html += '<div style="margin-bottom: 16px;">';
+                nutrition.recoveryNotes.forEach(note => {
+                    html += `
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 6px; background: rgba(251, 191, 36, 0.1); border-left: 3px solid #fbbf24; border-radius: 6px; font-size: 0.8rem; color: #e4e6eb;">
+                            <span>${note.icon}</span>
+                            <span>${note.text}</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // Pre/post workout
+            if (nutrition.preWorkout || nutrition.postWorkout) {
+                html += '<div class="peri-workout">';
+                if (nutrition.preWorkout) {
+                    const pw = nutrition.preWorkout;
+                    html += `
+                        <div class="peri-card">
+                            <div class="peri-name">⚡ ${pw.name}</div>
+                            <div class="peri-time">${pw.time}</div>
+                            <div class="peri-suggestion">${pw.suggestion}</div>
+                            <div class="peri-note">${pw.note || ''}</div>
+                        </div>
+                    `;
+                }
+                if (nutrition.postWorkout) {
+                    const pw = nutrition.postWorkout;
+                    html += `
+                        <div class="peri-card">
+                            <div class="peri-name">🔄 ${pw.name}</div>
+                            <div class="peri-time">${pw.time}</div>
+                            <div class="peri-suggestion">${pw.suggestion}</div>
+                            <div class="peri-note">${pw.note || ''}</div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+            }
+
+            // Meal cards
+            html += '<div class="meal-grid">';
+            nutrition.meals.forEach((meal, idx) => {
+                const mealMeta = nutrition.mealTimes[idx];
+                html += `
+                    <div class="meal-card">
+                        <div class="meal-card-header">
+                            <div>
+                                <div class="meal-card-name">${meal.name}</div>
+                                <div class="meal-card-time">${mealMeta.time}</div>
+                            </div>
+                            <span class="meal-card-cal">${meal.macros.cal} kcal</span>
+                        </div>
+                        <div class="meal-ingredients">${meal.ingredients.join(' · ')}</div>
+                        <div class="meal-macros-row">
+                            <span class="meal-macro" style="color: #f87171;">P: ${meal.macros.protein}g</span>
+                            <span class="meal-macro" style="color: #fbbf24;">C: ${meal.macros.carb}g</span>
+                            <span class="meal-macro" style="color: #a78bfa;">F: ${meal.macros.fat}g</span>
+                        </div>
+                        ${meal.ibsNote ? `<div class="meal-ibs-note">🫄 ${meal.ibsNote}</div>` : ''}
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            // Meal totals breakdown
+            const mealsCal = nutrition.totalMacros.cal;
+            const periCal = (nutrition.preWorkout ? nutrition.preWorkout.macros.cal : 0) + (nutrition.postWorkout ? nutrition.postWorkout.macros.cal : 0);
+            const totalCal = mealsCal + periCal;
+            const diff = t.calories - totalCal;
+            const diffStr = diff > 30 ? ` · <span style="color: #fbbf24;">~${diff} kcal flexible (extra fruit, bigger portions, or a second snack)</span>` : diff < -30 ? ` · <span style="color: #34d399;">${Math.abs(diff)} kcal over — reduce a portion slightly</span>` : ' · ✓ On target';
+            html += `<div style="font-size: 0.8rem; color: #a0a6b1; margin-bottom: 16px;">
+                4 meals: ${mealsCal} kcal${periCal > 0 ? ` + workout fuel: ${periCal} kcal` : ''} = <strong style="color: #e4e6eb;">${totalCal} kcal</strong> (target: ${t.calories})${diffStr}
+            </div>`;
+
+            // Hydration
+            html += `
+                <div class="hydration-bar">
+                    <span class="hydra-icon">💧</span>
+                    <span class="hydra-target">${nutrition.hydration.target}</span>
+                    <span class="hydra-note">${nutrition.hydration.note}</span>
+                </div>
+            `;
+
+            // Supplements
+            html += '<div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #a0a6b1;">Supplements</div>';
+            html += '<div class="supplement-row">';
+            nutrition.supplements.forEach(s => {
+                html += `
+                    <div class="supplement-card">
+                        <div class="supplement-name">${s.icon} ${s.name}</div>
+                        <div class="supplement-dose">${s.dose}</div>
+                        <div class="supplement-timing">${s.timing}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            // Condition tips
+            html += '<div style="font-size: 0.85rem; font-weight: 600; margin: 16px 0 8px; color: #a0a6b1;">Your Health Considerations</div>';
+            html += '<div class="condition-tips">';
+            CONDITION_TIPS.forEach(ct => {
+                html += `
+                    <div class="condition-tip">
+                        <strong>${ct.icon} ${ct.condition}</strong>
+                        ${ct.tip}
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            document.getElementById('nutrition-card').innerHTML = html;
+        }
+
+        // ── RENDER: HOLIDAY NUTRITION ──
+        function renderHolidayNutrition(nutrition) {
+            const info = nutrition.info;
+            let html = `
+                <div class="card-title"><span class="icon">🌴</span> Holiday Nutrition — ${nutrition.location}</div>
+
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #f59e0b; margin-bottom: 6px;">
+                        🏖️ Day ${info.daysIn} of ${info.totalDays} in ${nutrition.location}
+                    </div>
+                    <div style="font-size: 0.9rem; color: #e4e6eb; line-height: 1.5;">
+                        ${nutrition.mindset}
+                    </div>
+                </div>
+            `;
+
+            // Holiday tips
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">';
+            nutrition.tips.forEach(tip => {
+                html += `
+                    <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px;">
+                        <div style="font-size: 0.9rem; font-weight: 600; color: #e4e6eb; margin-bottom: 4px;">${tip.icon} ${tip.title}</div>
+                        <div style="font-size: 0.8rem; color: #a0a6b1; line-height: 1.4;">${tip.detail}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            // Still show supplements — they're important
+            html += '<div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #a0a6b1;">Don\'t Forget Your Supplements</div>';
+            html += '<div class="supplement-row">';
+            nutrition.supplements.forEach(s => {
+                html += `
+                    <div class="supplement-card">
+                        <div class="supplement-name">${s.icon} ${s.name}</div>
+                        <div class="supplement-dose">${s.dose}</div>
+                        <div class="supplement-timing">${s.timing}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            document.getElementById('nutrition-card').innerHTML = html;
+        }
+
+        // ── RENDER: WEEKLY SCHEDULE ──
+        function renderWeeklySchedule(weekSchedule) {
+            let html = `
+                <div class="card-title"><span class="icon">📅</span> This Week</div>
+                <div class="week-grid">
+            `;
+
+            weekSchedule.forEach(day => {
+                const classes = ['day-cell'];
+                if (day.isToday) classes.push('today');
+                if (day.isPast) classes.push('past');
+
+                html += `
+                    <div class="${classes.join(' ')}">
+                        <div class="day-name">${day.dayName}</div>
+                        <div class="day-date">${day.dateShort}</div>
+                        <div class="day-icon">${day.icon}</div>
+                        <div class="day-workout-name">${day.name}</div>
+                        ${day.isToday && day.intensity ? `<div class="day-intensity-dot" style="background: ${intensityColor(day.intensity)};"></div>` : ''}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            document.getElementById('schedule-card').innerHTML = html;
+        }
+
+        // ── RENDER: HRV CHART ──
+        function renderHRVChart(ouraData) {
+            const ctx = document.getElementById('hrv-chart').getContext('2d');
+            const history = ouraData.readinessHistory;
+
+            const labels = history.map(d => {
+                const date = new Date(d.day + 'T00:00:00');
+                return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
+            });
+            const hrvValues = history.map(d => d.hrv);
+            const baseline = history.map(() => COACH_CONFIG.baselines.hrvBalance);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'HRV Balance',
+                            data: hrvValues,
+                            borderColor: '#4ecdfc',
+                            backgroundColor: 'rgba(78, 205, 252, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#4ecdfc',
+                            fill: true,
+                            tension: 0.3,
+                        },
+                        {
+                            label: 'Baseline (85ms)',
+                            data: baseline,
+                            borderColor: 'rgba(248, 113, 113, 0.5)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#a0a6b1', font: { size: 11 } },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#a0a6b1', font: { size: 11 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                        },
+                        y: {
+                            ticks: { color: '#a0a6b1', font: { size: 11 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                        },
+                    },
+                },
+            });
+        }
+
+        // ── RENDER: WEIGHT PROGRESS ──
+        let weightChartInstance = null;
+
+        function renderWeightProgress(progress) {
+            const card = document.getElementById('weight-card');
+            const { startWeight, currentWeight, goalWeight, lostKg, toGoKg, progressPct, weeklyAvgRate, daysSinceLastWeighIn, entries } = progress;
+
+            let reminder = '';
+            if (daysSinceLastWeighIn === null) {
+                reminder = '<div class="weight-reminder">No weigh-ins yet. Step on the scale!</div>';
+            } else if (daysSinceLastWeighIn >= 7) {
+                reminder = `<div class="weight-reminder">Last weigh-in was ${daysSinceLastWeighIn} days ago — time for a check-in!</div>`;
+            }
+
+            const lostColor = lostKg > 0 ? 'green' : '';
+            const rateStr = entries.length >= 2 ? `${weeklyAvgRate} kg/wk` : '—';
+
+            let html = `
+                <div class="card-title"><span class="icon">⚖️</span> Weight Progress</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #a0a6b1; margin-bottom: 2px;">
+                    <span>Start: ${startWeight} kg</span>
+                    <span>${progressPct}% complete</span>
+                    <span>Goal: ${goalWeight} kg</span>
+                </div>
+                <div class="weight-progress-bar">
+                    <div class="weight-progress-fill" style="width: ${progressPct}%;"></div>
+                    <div class="weight-progress-markers">
+                        <div class="weight-progress-marker" style="left: 25%;"></div>
+                        <div class="weight-progress-marker" style="left: 50%;"></div>
+                        <div class="weight-progress-marker" style="left: 75%;"></div>
+                    </div>
+                </div>
+                <div class="weight-stat-grid">
+                    <div class="weight-stat">
+                        <div class="stat-value">${currentWeight}</div>
+                        <div class="stat-label">Current (kg)</div>
+                    </div>
+                    <div class="weight-stat">
+                        <div class="stat-value ${lostColor}">${lostKg > 0 ? '-' : ''}${Math.abs(lostKg)}</div>
+                        <div class="stat-label">Lost (kg)</div>
+                    </div>
+                    <div class="weight-stat">
+                        <div class="stat-value">${toGoKg}</div>
+                        <div class="stat-label">To go (kg)</div>
+                    </div>
+                    <div class="weight-stat">
+                        <div class="stat-value">${rateStr}</div>
+                        <div class="stat-label">Avg rate</div>
+                    </div>
+                </div>
+                ${reminder}
+                <div style="text-align: center; margin-top: 12px;">
+                    <button class="journal-save-btn" onclick="showWeightInput()">Log Weigh-In</button>
+                </div>
+            `;
+
+            if (entries.length >= 2) {
+                html += '<div style="height: 200px; margin-top: 16px;"><canvas id="weight-chart"></canvas></div>';
+            }
+
+            card.innerHTML = html;
+
+            if (entries.length >= 2) {
+                renderWeightChart(entries);
+            }
+        }
+
+        function renderWeightChart(entries) {
+            const ctx = document.getElementById('weight-chart').getContext('2d');
+            if (weightChartInstance) weightChartInstance.destroy();
+
+            const labels = entries.map(e => {
+                const d = new Date(e.date + 'T00:00:00');
+                return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            });
+            const weights = entries.map(e => e.weightKg);
+            const goalLine = entries.map(() => COACH_CONFIG.user.goalWeightKg);
+
+            // 7-day moving average
+            const movingAvg = weights.map((_, i) => {
+                const window = weights.slice(Math.max(0, i - 6), i + 1);
+                return +(window.reduce((a, b) => a + b, 0) / window.length).toFixed(1);
+            });
+
+            weightChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Weight (kg)',
+                            data: weights,
+                            borderColor: '#4ecdfc',
+                            backgroundColor: 'rgba(78, 205, 252, 0.08)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#4ecdfc',
+                            fill: true,
+                            tension: 0.3,
+                        },
+                        {
+                            label: '7-Day Avg',
+                            data: movingAvg,
+                            borderColor: '#f59e0b',
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0.4,
+                        },
+                        {
+                            label: 'Goal',
+                            data: goalLine,
+                            borderColor: 'rgba(16, 185, 129, 0.4)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#a0a6b1', font: { size: 11 } } },
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#a0a6b1', font: { size: 11 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                        },
+                        y: {
+                            ticks: { color: '#a0a6b1', font: { size: 11 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            suggestedMin: COACH_CONFIG.user.goalWeightKg - 2,
+                            suggestedMax: Math.max(...weights) + 2,
+                        },
+                    },
+                },
+            });
+        }
+
+        function showWeightInput() {
+            const card = document.getElementById('weight-card');
+            const latest = getLatestWeight();
+            const prefill = latest ? latest.weightKg : COACH_CONFIG.user.currentWeightKg;
+
+            card.innerHTML = `
+                <div class="card-title"><span class="icon">⚖️</span> Log Weigh-In</div>
+                <div style="text-align: center; margin: 20px 0;">
+                    <input type="number" step="0.1" min="60" max="150" value="${prefill}" class="weight-input-field" id="weight-input" />
+                    <div style="font-size: 0.8rem; color: #a0a6b1; margin-top: 6px;">kg</div>
+                </div>
+                <textarea class="journal-notes-input" id="weight-notes" placeholder="Optional notes (e.g. morning, after gym...)" rows="2"></textarea>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="journal-save-btn" onclick="saveWeighIn()">Save</button>
+                    <button class="journal-save-btn" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #a0a6b1;" onclick="renderWeightProgress(getWeightProgress())">Cancel</button>
+                </div>
+            `;
+            document.getElementById('weight-input').focus();
+        }
+
+        async function saveWeighIn() {
+            const input = document.getElementById('weight-input');
+            const notes = document.getElementById('weight-notes');
+            const kg = parseFloat(input.value);
+
+            if (isNaN(kg) || kg < 60 || kg > 150) {
+                input.style.borderColor = '#f87171';
+                return;
+            }
+
+            const dateStr = getTodayStr();
+            const entry = {
+                timestamp: new Date().toISOString(),
+                weightKg: +kg.toFixed(1),
+                notes: notes.value.trim(),
+            };
+
+            await saveWeightEntry(dateStr, entry);
+            renderWeightProgress(getWeightProgress());
+        }
+
+        // ── RENDER: JOURNAL CHECK-IN ──
+
+        function renderJournal(dateStr) {
+            const card = document.getElementById('journal-card');
+            const todayStr = getTodayStr();
+            const entry = getJournalEntry(dateStr);
+
+            // Yesterday string for editability rule
+            const yest = new Date();
+            yest.setDate(yest.getDate() - 1);
+            const yesterdayStr = getDateStr(yest);
+
+            const canEdit = (dateStr === todayStr || dateStr === yesterdayStr);
+
+            if (!entry) {
+                if (canEdit) {
+                    renderJournalInput(dateStr, null);
+                } else {
+                    card.innerHTML = `
+                        <div class="card-title"><span class="icon">📝</span> Daily Check-In</div>
+                        <div style="color: #a0a6b1; font-size: 0.9rem; padding: 12px 0;">No check-in recorded for this date.</div>
+                    `;
+                }
+            } else {
+                if (canEdit) {
+                    renderJournalCompact(dateStr, entry);
+                } else {
+                    renderJournalCompact(dateStr, entry, true); // read-only
+                }
+            }
+
+            // Show recent entries below (only on today's view)
+            if (dateStr === todayStr) {
+                renderJournalHistory();
+            }
+        }
+
+        function renderJournalInput(dateStr, existingEntry) {
+            const card = document.getElementById('journal-card');
+            const todayStr = getTodayStr();
+
+            // Determine which toggles to show
+            const abStart = COACH_CONFIG.events.antibioticsStart;
+            const abEnd = COACH_CONFIG.events.antibioticsEnd;
+            const showAntibiotics = (dateStr >= abStart && dateStr <= abEnd);
+
+            // Concussion resolved — still track symptoms for jaw issue monitoring
+            const showConcussionSymptoms = !COACH_CONFIG.events.concussionResolved; // Hide if resolved
+
+            // Pre-populate from existing entry
+            const e = existingEntry || {};
+            const s = e.symptoms || {};
+            const feeling = e.overallFeeling || 0;
+            const abConf = e.antibioticsConfirmed || false;
+            const notes = e.notes || '';
+
+            let html = `
+                <div class="card-title"><span class="icon">📝</span> Daily Check-In</div>
+            `;
+
+            // Concussion symptom toggles
+            if (showConcussionSymptoms) {
+                const symptoms = [
+                    { key: 'headache', label: '🤕 Headache', val: s.headache },
+                    { key: 'dizziness', label: '😵 Dizziness', val: s.dizziness },
+                    { key: 'brainFog', label: '🌫️ Brain fog', val: s.brainFog },
+                    { key: 'nausea', label: '🤢 Nausea', val: s.nausea },
+                    { key: 'lightSensitivity', label: '😎 Light sens.', val: s.lightSensitivity },
+                ];
+                html += `<div class="journal-section-label">Concussion symptoms (toggle any you're experiencing)</div>`;
+                html += `<div class="journal-toggles">`;
+                symptoms.forEach(sym => {
+                    html += `<button class="journal-toggle ${sym.val ? 'active-symptom' : ''}" data-key="${sym.key}" onclick="toggleSymptom(this)">${sym.label}</button>`;
+                });
+                html += `</div>`;
+            }
+
+            // Gut issues (always shows — chronic IBS)
+            html += `<div class="journal-section-label" style="margin-top: 12px;">Other</div>`;
+            html += `<div class="journal-toggles">`;
+            html += `<button class="journal-toggle ${s.gutIssues ? 'active-symptom' : ''}" data-key="gutIssues" onclick="toggleSymptom(this)">🫃 Gut issues</button>`;
+
+            // Antibiotics toggle (only during active course)
+            if (showAntibiotics) {
+                html += `<button class="journal-toggle ${abConf ? 'active-good' : ''}" data-key="antibioticsConfirmed" onclick="toggleGood(this)">💊 Antibiotics taken</button>`;
+            }
+            html += `</div>`;
+
+            // Overall feeling 1-5
+            html += `<div class="journal-section-label" style="margin-top: 14px;">How are you feeling overall?</div>`;
+            html += `<div class="feeling-pills">`;
+            const feelLabels = ['😫', '😕', '😐', '🙂', '😁'];
+            for (let i = 1; i <= 5; i++) {
+                const selCls = feeling === i ? `selected sel-${i}` : '';
+                html += `<button class="feeling-pill ${selCls}" data-val="${i}" onclick="selectFeeling(this)">${feelLabels[i - 1]}<span style="display:block;font-size:0.65rem;margin-top:2px;">${i}/5</span></button>`;
+            }
+            html += `</div>`;
+
+            // Notes
+            html += `
+                <div class="journal-section-label" style="margin-top: 14px;">Anything on your mind...</div>
+                <textarea class="journal-notes-input" id="journal-notes" placeholder="How's your day going? Any symptoms? General vibes...">${notes}</textarea>
+            `;
+
+            // Save button
+            html += `<button class="journal-save-btn" onclick="saveJournal('${dateStr}')">Save Check-In</button>`;
+
+            card.innerHTML = html;
+        }
+
+        function renderJournalCompact(dateStr, entry, readOnly) {
+            const card = document.getElementById('journal-card');
+            const feelLabels = ['', '😫', '😕', '😐', '🙂', '😁'];
+            const f = entry.overallFeeling || 0;
+
+            // Build symptom list
+            const s = entry.symptoms || {};
+            const activeSymptoms = [];
+            if (s.headache) activeSymptoms.push('🤕 Headache');
+            if (s.dizziness) activeSymptoms.push('😵 Dizziness');
+            if (s.brainFog) activeSymptoms.push('🌫️ Brain fog');
+            if (s.nausea) activeSymptoms.push('🤢 Nausea');
+            if (s.lightSensitivity) activeSymptoms.push('😎 Light sens.');
+            if (s.gutIssues) activeSymptoms.push('🫃 Gut issues');
+
+            const symptomStr = activeSymptoms.length > 0
+                ? `<span style="color: #ef4444;">${activeSymptoms.join(', ')}</span>`
+                : '<span style="color: #34d399;">No symptoms ✓</span>';
+
+            let html = `
+                <div class="card-title"><span class="icon">📝</span> Daily Check-In</div>
+                <div class="journal-compact">
+                    <div class="journal-compact-feeling">${feelLabels[f]} ${f}/5</div>
+                    <div class="journal-compact-symptoms">${symptomStr}</div>
+            `;
+
+            if (entry.antibioticsConfirmed) {
+                html += `<div style="font-size: 0.8rem; color: #34d399; margin-top: 4px;">💊 Antibiotics taken ✓</div>`;
+            }
+
+            if (entry.notes) {
+                html += `<div class="journal-compact-notes">"${entry.notes}"</div>`;
+            }
+
+            html += `</div>`;
+
+            if (!readOnly) {
+                html += `<button class="journal-edit-btn" onclick="editJournal('${dateStr}')">✏️ Edit</button>`;
+            }
+
+            card.innerHTML = html;
+        }
+
+        function renderJournalHistory() {
+            const card = document.getElementById('journal-card');
+            const recent = getRecentJournalEntries(4); // Get 4 because today might be one of them
+            const todayStr = getTodayStr();
+            const feelLabels = ['', '😫', '😕', '😐', '🙂', '😁'];
+
+            // Filter out today's entry
+            const pastEntries = recent.filter(e => e.date !== todayStr).slice(0, 3);
+
+            if (pastEntries.length === 0) return;
+
+            let html = `<div class="journal-section-label" style="margin-top: 16px;">Recent check-ins</div>`;
+
+            pastEntries.forEach(e => {
+                const s = e.symptoms || {};
+                const hasSymptoms = s.headache || s.dizziness || s.brainFog || s.nausea || s.lightSensitivity || s.gutIssues;
+                const symptomDot = hasSymptoms ? '🔴' : '🟢';
+                const f = e.overallFeeling || 0;
+                const noteSnip = e.notes ? (e.notes.length > 40 ? e.notes.slice(0, 40) + '…' : e.notes) : '';
+
+                html += `
+                    <div class="journal-history-item">
+                        <span class="journal-history-date">${e.date}</span>
+                        <span>${feelLabels[f]}</span>
+                        <span>${symptomDot}</span>
+                        <span class="journal-history-notes">${noteSnip}</span>
+                    </div>
+                `;
+            });
+
+            card.innerHTML += html;
+        }
+
+        // ── JOURNAL INTERACTION HANDLERS ──
+
+        function toggleSymptom(btn) {
+            btn.classList.toggle('active-symptom');
+        }
+
+        function toggleGood(btn) {
+            btn.classList.toggle('active-good');
+        }
+
+        function selectFeeling(btn) {
+            document.querySelectorAll('.feeling-pill').forEach(p => {
+                p.classList.remove('selected');
+                p.className = p.className.replace(/sel-\d/g, '').trim();
+            });
+            const val = btn.dataset.val;
+            btn.classList.add('selected', `sel-${val}`);
+        }
+
+        function editJournal(dateStr) {
+            const entry = getJournalEntry(dateStr);
+            renderJournalInput(dateStr, entry);
+            // Re-render history if on today
+            if (dateStr === getTodayStr()) {
+                renderJournalHistory();
+            }
+        }
+
+        async function saveJournal(dateStr) {
+            // Gather symptom toggles
+            const symptoms = {};
+            document.querySelectorAll('#journal-card .journal-toggle[data-key]').forEach(btn => {
+                const key = btn.dataset.key;
+                if (key === 'antibioticsConfirmed') return; // handled separately
+                symptoms[key] = btn.classList.contains('active-symptom');
+            });
+
+            // Antibiotics
+            const abBtn = document.querySelector('#journal-card .journal-toggle[data-key="antibioticsConfirmed"]');
+            const antibioticsConfirmed = abBtn ? abBtn.classList.contains('active-good') : false;
+
+            // Overall feeling
+            const selPill = document.querySelector('#journal-card .feeling-pill.selected');
+            const overallFeeling = selPill ? parseInt(selPill.dataset.val) : 0;
+
+            // Notes
+            const notesEl = document.getElementById('journal-notes');
+            const notes = notesEl ? notesEl.value.trim() : '';
+
+            const entry = {
+                timestamp: new Date().toISOString(),
+                symptoms,
+                overallFeeling,
+                antibioticsConfirmed,
+                notes,
+            };
+
+            // Save via engine
+            await saveJournalEntry(dateStr, entry);
+
+            // Re-render compact view
+            renderJournal(dateStr);
+
+            // Check if coach should recommend adjustments
+            const recommendation = buildJournalRecommendation(entry, currentWorkout, currentOuraData, currentPhase);
+            if (recommendation) {
+                renderRecommendationBanner(recommendation, dateStr);
+            } else {
+                // Clear any existing banner
+                document.getElementById('journal-recommendation').innerHTML = '';
+            }
+        }
+
+        function renderRecommendationBanner(rec, dateStr) {
+            let changesHtml = '';
+            if (rec.workoutChanges.length > 0) {
+                changesHtml += '<div style="font-size: 0.8rem; color: #a0a6b1; margin-bottom: 4px; font-weight: 600;">Workout</div>';
+                rec.workoutChanges.forEach(c => {
+                    changesHtml += `<div class="recommendation-change">${c}</div>`;
+                });
+            }
+            if (rec.nutritionChanges.length > 0) {
+                changesHtml += '<div style="font-size: 0.8rem; color: #a0a6b1; margin-bottom: 4px; margin-top: 8px; font-weight: 600;">Nutrition</div>';
+                rec.nutritionChanges.forEach(c => {
+                    changesHtml += `<div class="recommendation-change">${c}</div>`;
+                });
+            }
+
+            document.getElementById('journal-recommendation').innerHTML = `
+                <div class="recommendation-banner">
+                    <h3>📝 Coach Recommendation</h3>
+                    <div class="recommendation-summary">${rec.summary}</div>
+                    <div class="recommendation-changes">${changesHtml}</div>
+                    <div class="recommendation-buttons">
+                        <button class="recommendation-btn accept" onclick="acceptJournalAdjustment('${dateStr}')">✓ Yes, adjust my plan</button>
+                        <button class="recommendation-btn decline" onclick="dismissJournalRecommendation('${dateStr}')">✗ No, keep as planned</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function acceptJournalAdjustment(dateStr) {
+            const entry = getJournalEntry(dateStr);
+            if (!entry) return;
+
+            // Mark as accepted
+            entry.adjustmentAccepted = true;
+            delete entry.adjustmentDeclined;
+            await saveJournalEntry(dateStr, entry);
+
+            // Re-select workout with journal data
+            const phase = getCurrentPhase(dateStr);
+            const viewDate = new Date(dateStr + 'T00:00:00');
+            const workout = selectTodayWorkout(currentOuraData, phase, viewDate, entry);
+            if (dateStr === getTodayStr()) currentWorkout = workout;
+
+            // Re-select nutrition with journal data
+            const nutrition = selectDailyMeals(
+                workout ? workout.typeKey : 'rest_day',
+                viewDate,
+                currentOuraData,
+                workout ? workout.intensity : 'rest',
+                entry
+            );
+
+            // Re-render
+            renderWorkout(workout);
+            renderNutrition(nutrition);
+
+            // Dismiss banner
+            document.getElementById('journal-recommendation').innerHTML = '';
+        }
+
+        async function dismissJournalRecommendation(dateStr) {
+            const entry = getJournalEntry(dateStr);
+            if (!entry) return;
+
+            // Mark as declined
+            entry.adjustmentDeclined = true;
+            delete entry.adjustmentAccepted;
+            await saveJournalEntry(dateStr, entry);
+
+            // Dismiss banner
+            document.getElementById('journal-recommendation').innerHTML = '';
+        }
+
+        // ── DAY PICKER STATE ──
+        let selectedDateStr = getTodayStr(); // YYYY-MM-DD
+        let pickerOffset = 0; // 0 = today in center, +1 shifts forward, etc.
+
+        function buildDayPickerDays() {
+            const container = document.getElementById('day-pick-days');
+            const today = new Date();
+            const todayStr = getTodayStr();
+
+            // Clear old buttons
+            container.innerHTML = '';
+
+            // Show 7 days: 3 before center, center, 3 after center
+            // Center = today + pickerOffset
+            const center = new Date(today);
+            center.setDate(center.getDate() + pickerOffset);
+
+            for (let i = -3; i <= 3; i++) {
+                const d = new Date(center);
+                d.setDate(center.getDate() + i);
+                const dateStr = getDateStr(d);
+                const dayName = d.toLocaleDateString('en-GB', { weekday: 'short' });
+                const dayNum = d.getDate();
+                const isSelected = dateStr === selectedDateStr;
+                const isToday = dateStr === todayStr;
+
+                const btn = document.createElement('button');
+                btn.className = 'day-pick-btn' + (isSelected ? ' active' : '') + (isToday ? ' today-marker' : '');
+                btn.dataset.date = dateStr;
+                btn.innerHTML = `<div class="dp-day">${dayName}</div><div class="dp-date">${dayNum}</div>`;
+                btn.addEventListener('click', () => selectDay(dateStr));
+                container.appendChild(btn);
+            }
+        }
+
+        function selectDay(dateStr) {
+            selectedDateStr = dateStr;
+            buildDayPickerDays();
+            renderForDate(dateStr);
+        }
+
+        function shiftDay(direction) {
+            pickerOffset += direction * 7;
+            buildDayPickerDays();
+        }
+
+        function goToToday() {
+            selectedDateStr = getTodayStr();
+            pickerOffset = 0;
+            buildDayPickerDays();
+            renderForDate(selectedDateStr);
+        }
+
+        // ── GROCERY LIST ──
+        let groceryWeekOffset = 0; // 0 = current week, 1 = next week, -1 = prev week
+
+        function renderGroceryList() {
+            const card = document.getElementById('grocery-card');
+            if (!card) return;
+
+            // Calculate the start date for the target week
+            const now = new Date();
+            const target = new Date(now);
+            target.setDate(target.getDate() + (groceryWeekOffset * 7));
+
+            const data = generateWeeklyGroceryList(getDateStr(target));
+
+            // Holiday week
+            if (data.isHoliday) {
+                card.innerHTML = `
+                    <div class="card-title"><span class="icon">🛒</span> Grocery List</div>
+                    <div class="grocery-header">
+                        <div></div>
+                        <div>
+                            <button class="grocery-nav-btn" onclick="changeGroceryWeek(-1)">← Prev</button>
+                            <button class="grocery-nav-btn" onclick="groceryWeekOffset=0; renderGroceryList();">This Week</button>
+                            <button class="grocery-nav-btn" onclick="changeGroceryWeek(1)">Next →</button>
+                        </div>
+                    </div>
+                    <div class="grocery-holiday">
+                        <div class="holiday-emoji">🌴</div>
+                        <div class="holiday-text">You're on holiday in ${data.holidayLocation}!</div>
+                        <div>No meal plan this week. Enjoy it.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Format week label
+            const weekStart = new Date(data.weekStart + 'T00:00:00');
+            const weekEnd = new Date(data.weekEnd + 'T00:00:00');
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const weekLabel = `${monthNames[weekStart.getMonth()]} ${weekStart.getDate()} – ${monthNames[weekEnd.getMonth()]} ${weekEnd.getDate()}`;
+
+            // Load checked state from localStorage
+            const storageKey = `grocery-checked-${data.weekStart}`;
+            let checkedItems = {};
+            try { checkedItems = JSON.parse(localStorage.getItem(storageKey)) || {}; } catch(e) {}
+
+            // Build categories HTML
+            let categoriesHTML = '';
+            for (const [catName, items] of Object.entries(data.categories)) {
+                let itemsHTML = '';
+                for (const entry of items) {
+                    const itemKey = `${entry.item}|${entry.unit}`;
+                    const isChecked = checkedItems[itemKey] ? 'checked' : '';
+                    const displayText = formatGroceryItem(entry);
+                    itemsHTML += `
+                        <div class="grocery-item ${isChecked}" data-key="${itemKey}" data-week="${data.weekStart}" onclick="toggleGroceryItem(this)">
+                            <div class="grocery-checkbox"></div>
+                            <div class="grocery-item-text">${displayText}</div>
+                        </div>
+                    `;
+                }
+                categoriesHTML += `
+                    <div class="grocery-category">
+                        <div class="grocery-category-title">${catName}</div>
+                        ${itemsHTML}
+                    </div>
+                `;
+            }
+
+            // Build meals summary
+            const dayAbbr = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' };
+            let mealsHTML = '';
+            for (const day of data.mealSummary) {
+                const label = dayAbbr[day.day] || day.day;
+                if (day.isHoliday) {
+                    mealsHTML += `<div class="meal-day"><span class="day-label">${label}</span> 🌴 Holiday</div>`;
+                } else {
+                    mealsHTML += `<div class="meal-day"><span class="day-label">${label}</span> ${day.meals.join(' → ')}</div>`;
+                }
+            }
+
+            card.innerHTML = `
+                <div class="card-title"><span class="icon">🛒</span> Grocery List</div>
+                <div class="grocery-header">
+                    <h3>Week of ${weekLabel} · ${data.totalMeals} meals</h3>
+                    <div class="grocery-actions">
+                        <button class="grocery-nav-btn" onclick="changeGroceryWeek(-1)">← Prev</button>
+                        <button class="grocery-nav-btn" onclick="changeGroceryWeek(0)">This Week</button>
+                        <button class="grocery-nav-btn" onclick="changeGroceryWeek(1)">Next →</button>
+                        <button class="grocery-btn" id="copy-grocery-btn" onclick="copyGroceryList()">📋 Copy</button>
+                    </div>
+                </div>
+                ${categoriesHTML}
+                <button class="grocery-meals-toggle" onclick="toggleMealsSummary()">▶ This week's meals</button>
+                <div id="grocery-meals-detail" class="grocery-meals-list" style="display: none;">
+                    ${mealsHTML}
+                </div>
+            `;
+        }
+
+        function toggleGroceryItem(el) {
+            el.classList.toggle('checked');
+            const key = el.dataset.key;
+            const weekStart = el.dataset.week;
+            const storageKey = `grocery-checked-${weekStart}`;
+            let checkedItems = {};
+            try { checkedItems = JSON.parse(localStorage.getItem(storageKey)) || {}; } catch(e) {}
+            if (el.classList.contains('checked')) {
+                checkedItems[key] = true;
+            } else {
+                delete checkedItems[key];
+            }
+            localStorage.setItem(storageKey, JSON.stringify(checkedItems));
+        }
+
+        function changeGroceryWeek(direction) {
+            if (direction === 0) {
+                groceryWeekOffset = 0;
+            } else {
+                groceryWeekOffset += direction;
+            }
+            renderGroceryList();
+        }
+
+        function toggleMealsSummary() {
+            const detail = document.getElementById('grocery-meals-detail');
+            const btn = detail.previousElementSibling;
+            if (detail.style.display === 'none') {
+                detail.style.display = 'block';
+                btn.textContent = '▼ This week\'s meals';
+            } else {
+                detail.style.display = 'none';
+                btn.textContent = '▶ This week\'s meals';
+            }
+        }
+
+        function copyGroceryList() {
+            const now = new Date();
+            const target = new Date(now);
+            target.setDate(target.getDate() + (groceryWeekOffset * 7));
+            const data = generateWeeklyGroceryList(getDateStr(target));
+
+            if (data.isHoliday) return;
+
+            let text = `🛒 GROCERY LIST — Week of ${data.weekStart}\n\n`;
+
+            for (const [catName, items] of Object.entries(data.categories)) {
+                text += `${catName.toUpperCase()}\n`;
+                for (const entry of items) {
+                    text += `• ${formatGroceryItem(entry)}\n`;
+                }
+                text += '\n';
+            }
+
+            const dayAbbr = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' };
+            text += 'THIS WEEK\'S MEALS\n';
+            for (const day of data.mealSummary) {
+                const label = dayAbbr[day.day] || day.day;
+                if (day.isHoliday) {
+                    text += `${label}: 🌴 Holiday\n`;
+                } else {
+                    text += `${label}: ${day.meals.join(' → ')}\n`;
+                }
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copy-grocery-btn');
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // ── RENDER FOR A SPECIFIC DATE ──
+        function renderForDate(dateStr) {
+            const todayStr = getTodayStr();
+            const viewDate = new Date(dateStr + 'T00:00:00');
+            const isToday = dateStr === todayStr;
+
+            // Update header date
+            document.getElementById('header-date').textContent = formatDateLong(viewDate);
+
+            // Phase for that date
+            const phase = getCurrentPhase(dateStr);
+
+            // Update phase badge
+            const badge = document.getElementById('phase-badge');
+            let badgeHtml = `<span class="phase-badge" style="background: ${phase.colorBg}; color: ${phase.color}; border: 1px solid ${phase.color};">${phase.name} — Day ${phase.elapsedDays}/${phase.totalDays}</span>`;
+            if (isHoliday(dateStr)) {
+                const info = getHolidayInfo(dateStr);
+                badgeHtml += ` <span class="phase-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b;">🌴 ${info.location} — Day ${info.daysIn}/${info.totalDays}</span>`;
+            }
+            badge.innerHTML = badgeHtml;
+
+            // Show/hide "viewing another day" notice
+            const notice = document.getElementById('date-notice');
+            if (!isToday) {
+                const diff = daysBetween(todayStr, dateStr);
+                const label = diff > 0 ? `${diff} day${diff !== 1 ? 's' : ''} from now` : `${Math.abs(diff)} day${Math.abs(diff) !== 1 ? 's' : ''} ago`;
+                notice.innerHTML = `👀 Viewing plan for <strong>${formatDateLong(viewDate)}</strong> (${label}) <span class="back-link" id="back-to-today">← Back to today</span>`;
+                notice.style.display = 'block';
+                document.getElementById('back-to-today').addEventListener('click', goToToday);
+            } else {
+                notice.style.display = 'none';
+            }
+
+            // Holiday check for that date
+            const onHoliday = isHoliday(dateStr);
+
+            // Check if journal adjustments were accepted for this date
+            const journalEntry = getJournalEntry(dateStr);
+            const journalAccepted = journalEntry && journalEntry.adjustmentAccepted;
+            const journalForEngine = journalAccepted ? journalEntry : undefined;
+
+            // Workout for that date (uses Oura data for intensity but schedule from the date)
+            const workout = selectTodayWorkout(currentOuraData, phase, viewDate, journalForEngine);
+            if (isToday) currentWorkout = workout;
+
+            // Nutrition for that date
+            const nutrition = onHoliday
+                ? getHolidayNutrition(dateStr)
+                : selectDailyMeals(workout ? workout.typeKey : 'rest_day', viewDate, currentOuraData, workout ? workout.intensity : 'rest', journalForEngine);
+
+            // Render workout
+            if (onHoliday) {
+                renderHolidayWorkout(getHolidayWorkout(dateStr));
+            } else {
+                renderWorkout(workout);
+            }
+
+            // Render nutrition
+            renderNutrition(nutrition);
+
+            // Render journal for the selected date
+            renderJournal(dateStr);
+
+            // Show recommendation banner if entry exists but user hasn't decided yet
+            const recDiv = document.getElementById('journal-recommendation');
+            if (journalEntry && !journalEntry.adjustmentAccepted && !journalEntry.adjustmentDeclined) {
+                const rec = buildJournalRecommendation(journalEntry, workout, currentOuraData, phase);
+                if (rec) {
+                    renderRecommendationBanner(rec, dateStr);
+                } else {
+                    recDiv.innerHTML = '';
+                }
+            } else {
+                recDiv.innerHTML = '';
+            }
+
+            // Update weekly schedule to highlight selected day
+            const weekSchedule = buildWeeklySchedule(phase, currentOuraData);
+            renderWeeklySchedule(weekSchedule);
+
+            // Grocery list (always shows current/selected week, independent of date navigation)
+            renderGroceryList();
+        }
+
+        // ── MAIN INIT ──
+        async function init() {
+            try {
+                // Fetch data
+                const ouraData = await fetchCoachData();
+                currentOuraData = ouraData;
+
+                // Phase
+                const phase = getCurrentPhase();
+                currentPhase = phase;
+
+                // Holiday check
+                const onHoliday = isHoliday();
+
+                // Load weight log — updates COACH_CONFIG.user.currentWeightKg for calorie math
+                await loadWeightData();
+
+                // Load journal BEFORE workout/nutrition — needed to check acceptance state
+                await loadJournalData();
+                const todayEntry = getJournalEntry(getTodayStr());
+                const journalAccepted = todayEntry && todayEntry.adjustmentAccepted;
+                const journalForEngine = journalAccepted ? todayEntry : undefined;
+
+                // Workout (pass journal if previously accepted)
+                const workout = selectTodayWorkout(ouraData, phase, undefined, journalForEngine);
+                currentWorkout = workout;
+
+                // Nutrition — holiday or normal (pass journal if previously accepted)
+                const nutrition = onHoliday
+                    ? getHolidayNutrition()
+                    : selectDailyMeals(workout ? workout.typeKey : 'rest_day', undefined, ouraData, workout ? workout.intensity : 'rest', journalForEngine);
+
+                // Holiday workout data
+                const holidayWorkout = onHoliday ? getHolidayWorkout() : null;
+
+                // Recovery
+                const recovery = buildRecoveryStatus(ouraData, phase);
+
+                // Weekly schedule
+                const weekSchedule = buildWeeklySchedule(phase, ouraData);
+
+                // Render everything
+                renderHeader(phase, ouraData);
+                renderReadiness(ouraData);
+                renderRecovery(recovery);
+
+                // Weight progress
+                renderWeightProgress(getWeightProgress());
+
+                // Journal check-in
+                renderJournal(getTodayStr());
+
+                if (onHoliday) {
+                    renderHolidayWorkout(holidayWorkout);
+                } else {
+                    renderWorkout(workout);
+                }
+
+                renderNutrition(nutrition);
+                renderWeeklySchedule(weekSchedule);
+                renderGroceryList();
+                renderHRVChart(ouraData);
+
+                // Show recommendation banner if entry exists but user hasn't decided yet
+                if (todayEntry && !todayEntry.adjustmentAccepted && !todayEntry.adjustmentDeclined) {
+                    const rec = buildJournalRecommendation(todayEntry, workout, ouraData, phase);
+                    if (rec) {
+                        renderRecommendationBanner(rec, getTodayStr());
+                    }
+                }
+
+                // Build day picker
+                document.getElementById('day-prev').addEventListener('click', () => shiftDay(-1));
+                document.getElementById('day-next').addEventListener('click', () => shiftDay(1));
+                buildDayPickerDays();
+                document.getElementById('day-picker').style.display = 'flex';
+
+                // Show content, hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                document.getElementById('footer-time').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+            } catch (err) {
+                console.error('Coach init error:', err);
+                document.getElementById('loading').innerHTML = `
+                    <div style="color: #f87171;">Failed to load data</div>
+                    <div style="color: #a0a6b1; margin-top: 8px; font-size: 0.85rem;">${err.message}</div>
+                    <div style="margin-top: 12px;">
+                        <button class="btn btn-primary" onclick="init()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Go
+        init();
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('SW registered:', reg.scope))
+                .catch(err => console.log('SW registration failed:', err));
+        }
+    </script>
+</body>
+</html>

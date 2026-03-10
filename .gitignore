@@ -1,0 +1,28 @@
+# Local Netlify folder
+.netlify
+
+# macOS
+.DS_Store
+
+# Python scripts (local only)
+*.py
+*.pyc
+__pycache__
+
+# Local data and logs
+data/
+logs/
+*.log
+
+# Local setup files
+*.command
+setup-autostart.sh
+
+# Health profile (contains personal data)
+health-profile.md
+
+# Dependencies (installed by Netlify build)
+node_modules/
+
+# Backups
+*.backup.md

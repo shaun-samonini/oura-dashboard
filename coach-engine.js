@@ -77,19 +77,19 @@ const COACH_CONFIG = {
         {
             id: 'rebuild',
             name: 'Phase 2: Rebuild',
-            description: 'Rebuild aerobic base, reintroduce running, football 2x/week, strength training',
+            description: 'Hybrid athlete foundation: 3 lifts/week + 2 easy runs + football 2x/week. Lift heavy to preserve muscle during cut.',
             startDate: '2026-03-03',
             endDate: '2026-04-07',
             color: '#3b82f6',
             colorBg: 'rgba(59, 130, 246, 0.15)',
             maxIntensity: 'moderate',
-            allowedTypes: ['walking', 'yoga', 'mobility', 'upper_strength', 'lower_strength', 'full_body_strength', 'core_stability', 'running_easy', 'running_tempo', 'football', 'football_prep', 'rest_day'],
+            allowedTypes: ['walking', 'yoga', 'mobility', 'upper_strength', 'lower_strength', 'full_body_strength', 'core_stability', 'running_easy', 'running_tempo', 'running_long', 'football', 'football_prep', 'rest_day'],
             restrictions: [],
         },
         {
             id: 'push',
             name: 'Phase 3: Push',
-            description: 'Progressive overload, higher intensity, full football',
+            description: 'Progressive overload in gym, introduce tempo running. 3 lifts + 1 tempo + 1 easy run + football 2x/week.',
             startDate: '2026-04-08',
             endDate: '2026-06-30',
             color: '#10b981',
@@ -101,7 +101,7 @@ const COACH_CONFIG = {
         {
             id: 'sustain',
             name: 'Phase 4: Sustain',
-            description: 'Maintain fitness, keep weight at goal',
+            description: 'True 50/50 hybrid athlete. Maintenance calories, build running volume. 3 lifts + 1 tempo + 1 long run + football 2x/week.',
             startDate: '2026-07-01',
             endDate: '2026-12-31',
             color: '#8b5cf6',
@@ -853,6 +853,116 @@ const WORKOUT_LIBRARY = {
         },
     },
 
+    // ── TEMPO RUN (Phase 2+) ──
+    running_tempo: {
+        name: 'Tempo Run',
+        icon: '🏃',
+        type: 'cardio',
+        variants: {
+            easy: {
+                duration: 25,
+                description: '25-min tempo session — shortened intervals',
+                targetHR: '145-160 bpm',
+                warmup: [
+                    { name: 'Easy jog', duration: '5 min' },
+                ],
+                exercises: [
+                    { name: 'Tempo intervals: 2 min hard / 1 min recovery jog', sets: 4, note: 'Hard = a pace where you could speak in short sentences but wouldn\'t want to.' },
+                    { name: 'Easy jog', duration: '3 min' },
+                ],
+                cooldown: [
+                    { name: 'Walk 3 min + calf/hamstring stretch', duration: '5 min' },
+                ],
+                notes: 'First tempo session? Run the hard intervals at a pace where talking feels uncomfortable. That\'s the right effort.',
+            },
+            moderate: {
+                duration: 35,
+                description: '35-min tempo — building threshold fitness',
+                targetHR: '150-165 bpm',
+                warmup: [
+                    { name: 'Easy jog', duration: '5 min' },
+                ],
+                exercises: [
+                    { name: 'Tempo intervals: 3 min hard / 90s recovery jog', sets: 4, note: 'Consistent effort each interval. Don\'t go out too fast.' },
+                    { name: 'Easy jog', duration: '3 min' },
+                ],
+                cooldown: [
+                    { name: 'Walk 3 min + full lower body stretch', duration: '5 min' },
+                ],
+            },
+            hard: {
+                duration: 45,
+                description: '45-min threshold session',
+                targetHR: '155-170 bpm',
+                warmup: [
+                    { name: 'Easy jog', duration: '5 min' },
+                ],
+                exercises: [
+                    { name: 'Tempo intervals: 4 min hard / 1 min recovery jog', sets: 5, note: 'Comfortably uncomfortable. You should be working but not dying.' },
+                    { name: 'Easy jog', duration: '5 min' },
+                ],
+                cooldown: [
+                    { name: 'Walk 5 min + deep stretch (calves, quads, hips)', duration: '7 min' },
+                ],
+                notes: 'This is threshold work. You\'re building the engine. Push the pace but keep form clean.',
+            },
+        },
+    },
+
+    // ── LONG RUN (Phase 4 / Sustain) ──
+    running_long: {
+        name: 'Long Run',
+        icon: '🏃',
+        type: 'cardio',
+        variants: {
+            easy: {
+                duration: 40,
+                description: '40-min easy long run',
+                targetHR: '120-140 bpm',
+                warmup: [
+                    { name: 'Walk 3 min then light jog 2 min', duration: '5 min' },
+                ],
+                exercises: [
+                    { name: 'Easy jog', duration: '30 min', note: 'Conversational pace. If you can\'t talk, slow down.' },
+                ],
+                cooldown: [
+                    { name: 'Walk 3 min + full stretch', duration: '5 min' },
+                ],
+                notes: 'Building your aerobic base. The pace should feel almost too easy. That\'s the point.',
+            },
+            moderate: {
+                duration: 55,
+                description: '55-min steady Zone 2 run',
+                targetHR: '130-150 bpm',
+                warmup: [
+                    { name: 'Walk 2 min then easy jog 3 min', duration: '5 min' },
+                ],
+                exercises: [
+                    { name: 'Steady run', duration: '45 min', note: 'Zone 2 — you can talk in short sentences. Consistent pace throughout.' },
+                ],
+                cooldown: [
+                    { name: 'Walk 3 min + full lower body stretch', duration: '5 min' },
+                ],
+            },
+            hard: {
+                duration: 75,
+                description: '75-min long run with negative split',
+                targetHR: '135-155 bpm',
+                warmup: [
+                    { name: 'Easy jog', duration: '5 min' },
+                ],
+                exercises: [
+                    { name: 'Long run — first half easy', duration: '30 min', note: 'Conversational. Save your legs.' },
+                    { name: 'Long run — second half faster', duration: '30 min', note: 'Pick up the pace. Finish faster than you started.' },
+                ],
+                cooldown: [
+                    { name: 'Walk 5 min + deep stretch + foam roll if available', duration: '10 min' },
+                ],
+                notes: 'This is your weekly long run. Negative split = second half faster than first. Don\'t be a hero early.',
+            },
+        },
+    },
+
     // ── FOOTBALL ──
     football: {
         name: 'Football',
@@ -966,30 +1076,30 @@ const PHASE_SCHEDULES = {
         'rest_day',          // Sun
     ],
     rebuild: [
-        'rest_day',          // Mon — recover after Sunday football
-        'full_body_strength',// Tue — compound lifts
+        'upper_strength',    // Mon — push/pull
+        'running_easy',      // Tue — easy run (building base)
         'football',          // Wed
-        'running_easy',      // Thu — easy run
-        'full_body_strength',// Fri — second strength session
-        'running_easy',      // Sat — long easy run
+        'lower_strength',    // Thu — legs/posterior chain
+        'running_easy',      // Fri — easy run
+        'full_body_strength',// Sat — compound movements
         'football',          // Sun
     ],
     push: [
-        'running_easy',      // Mon — easy run
-        'full_body_strength',// Tue — compound lifts
+        'upper_strength',    // Mon — push/pull
+        'running_tempo',     // Tue — introduce tempo work
         'football',          // Wed
-        'running_tempo',     // Thu — tempo or intervals (the one hard run)
-        'full_body_strength',// Fri — second strength session
-        'running_easy',      // Sat — long easy run
+        'lower_strength',    // Thu — legs/posterior chain
+        'running_easy',      // Fri — keep one easy run
+        'full_body_strength',// Sat — compound movements
         'football',          // Sun
     ],
     sustain: [
-        'running_easy',      // Mon — easy run
-        'full_body_strength',// Tue — compound lifts
+        'upper_strength',    // Mon — push/pull
+        'running_tempo',     // Tue — tempo stays
         'football',          // Wed
-        'running_tempo',     // Thu — tempo or intervals
-        'full_body_strength',// Fri — second strength session
-        'running_easy',      // Sat — long easy run
+        'lower_strength',    // Thu — legs/posterior chain
+        'running_long',      // Fri — build endurance
+        'full_body_strength',// Sat — compound movements
         'football',          // Sun
     ],
 };
@@ -1029,7 +1139,7 @@ function selectTodayWorkout(ouraData, phase, dateOverride, journalEntry) {
 
     // Dizziness swap: replace football/running with walking (balance issues make these unsafe)
     if (je && (je.symptoms || []).includes('dizziness')) {
-        if (plannedType === 'football' || plannedType === 'running_easy') {
+        if (['football', 'running_easy', 'running_tempo', 'running_long'].includes(plannedType)) {
             plannedType = 'walking';
             journalSwapped = true;
         }
@@ -1130,7 +1240,7 @@ function calculateDailyTargets(workoutTypeKey, ouraData, intensity, journalEntry
     let calories = tdee - dailyDeficit;
 
     // Adjust for workout type
-    if (workoutTypeKey === 'football' || workoutTypeKey === 'running_easy') {
+    if (['football', 'running_easy', 'running_tempo', 'running_long'].includes(workoutTypeKey)) {
         calories += 200;
     } else if (workoutTypeKey === 'rest_day') {
         calories -= 100;
@@ -1578,7 +1688,7 @@ function selectDailyMeals(workoutTypeKey, dateOverride, ouraData, intensity, jou
         recoveryNotes,
         hydration: {
             target: `${targets.waterL}L water`,
-            note: workoutTypeKey === 'football' || workoutTypeKey === 'running_easy'
+            note: ['football', 'running_easy', 'running_tempo', 'running_long'].includes(workoutTypeKey)
                 ? 'Add 500ml extra on active days. Electrolytes if sweating > 45 min.'
                 : 'Sip throughout the day. Avoid large volumes at once (IBS).',
         },
@@ -1941,8 +2051,8 @@ function buildJournalRecommendation(journalEntry, currentWorkout, ouraData, phas
             const schedule = PHASE_SCHEDULES[phase.id] || PHASE_SCHEDULES.heal;
             const dayIdx = getDayOfWeekMon0(new Date());
             const plannedType = schedule[dayIdx];
-            if (plannedType === 'football' || plannedType === 'running_easy') {
-                workoutChanges.push(`${WORKOUT_LIBRARY[plannedType].name} → Walking (balance issues make ${plannedType === 'football' ? 'football' : 'running'} unsafe)`);
+            if (['football', 'running_easy', 'running_tempo', 'running_long'].includes(plannedType)) {
+                workoutChanges.push(`${WORKOUT_LIBRARY[plannedType].name} → Walking (balance issues make ${['football'].includes(plannedType) ? 'football' : 'running'} unsafe)`);
             }
         }
         workoutChanges.push('Dizziness reported — may be jaw-related. Taking it easier.');

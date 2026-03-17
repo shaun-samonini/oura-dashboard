@@ -52,6 +52,5 @@ export default async (req, context) => {
   }
 };
 
-export const config = {
-  path: "/api/*",
-};
+// Routing handled by netlify.toml redirects (catch-all /api/* AFTER specific routes)
+// Do NOT use path config here — it would override specific function routes like /api/weight-log

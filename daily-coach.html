@@ -1301,7 +1301,7 @@
             <!-- READINESS ROW -->
             <div class="readiness-grid" id="readiness-grid"></div>
 
-            <!-- RECOVERY STATUS -->
+            <!-- TRAINING STATUS -->
             <div class="card" id="recovery-card"></div>
 
             <!-- WEIGHT PROGRESS -->
@@ -1416,14 +1416,26 @@
             `;
         }
 
-        // ── RENDER: RECOVERY ──
+        // ── RENDER: TRAINING STATUS ──
         function renderRecovery(recovery) {
             const phase = recovery.phase;
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const todayDow = new Date().getDay();
+            const schedule = [
+                { day: 'Mon', type: 'Upper Strength', icon: '🏋️' },
+                { day: 'Tue', type: 'Running', icon: '🏃' },
+                { day: 'Wed', type: 'Football', icon: '⚽' },
+                { day: 'Thu', type: 'Lower Strength', icon: '🏋️' },
+                { day: 'Fri', type: 'Running', icon: '🏃' },
+                { day: 'Sat', type: 'Full Body', icon: '🏋️' },
+                { day: 'Sun', type: 'Football', icon: '⚽' },
+            ];
+
             let html = `
-                <div class="card-title"><span class="icon">🩺</span> Recovery Status</div>
+                <div class="card-title"><span class="icon">💪</span> Training Status</div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                     <span style="font-weight: 600; color: ${phase.color};">${phase.name}</span>
-                    <span style="font-size: 0.8rem; color: #a0a6b1;">${recovery.overallPct}% milestones complete</span>
+                    <span style="font-size: 0.8rem; color: #a0a6b1;">${phase.progressPct}% through phase</span>
                 </div>
                 <div style="font-size: 0.85rem; color: #a0a6b1; margin-bottom: 8px;">${phase.description}</div>
                 <div class="progress-bar-container">
@@ -1432,47 +1444,40 @@
 
                 <div class="recovery-stats">
                     <div class="recovery-stat">
-                        <div class="stat-value">✓</div>
-                        <div class="stat-label">Concussion resolved</div>
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Lifts/week</div>
                     </div>
                     <div class="recovery-stat">
-                        <div class="stat-value">${recovery.hrvGap > 0 ? recovery.hrvGap : '✓'}</div>
-                        <div class="stat-label">${recovery.hrvGap > 0 ? 'HRV gap to 48ms' : 'HRV at baseline'}</div>
+                        <div class="stat-value">2</div>
+                        <div class="stat-label">Runs/week</div>
+                    </div>
+                    <div class="recovery-stat">
+                        <div class="stat-value">2</div>
+                        <div class="stat-label">Football/week</div>
                     </div>
                     <div class="recovery-stat">
                         <div class="stat-value">${recovery.sleepDebt > 0 ? recovery.sleepDebt + 'h' : '✓'}</div>
                         <div class="stat-label">${recovery.sleepDebt > 0 ? 'Sleep debt' : 'Sleep on track'}</div>
                     </div>
-                    <div class="recovery-stat">
-                        <div class="stat-value">${recovery.antibioticsDone ? '✓' : 'Active'}</div>
-                        <div class="stat-label">Antibiotics</div>
-                    </div>
                 </div>
 
-                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #a0a6b1;">Recovery Milestones</div>
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #a0a6b1;">Weekly Schedule</div>
                 <ul class="milestone-list">
             `;
 
-            recovery.milestones.forEach(m => {
+            schedule.forEach((s, i) => {
+                const dayIndex = (i + 1) % 7; // Mon=1 .. Sun=0
+                const isToday = dayIndex === todayDow;
                 html += `
-                    <li class="milestone-item">
-                        <span class="milestone-check ${m.done ? 'done' : 'pending'}">${m.done ? '✓' : '○'}</span>
-                        <span>${m.label}</span>
-                        <span class="milestone-detail">${m.detail}</span>
+                    <li class="milestone-item" ${isToday ? 'style="background: rgba(0,200,255,0.08); border-radius: 6px; padding: 4px 6px;"' : ''}>
+                        <span class="milestone-check done">${s.icon}</span>
+                        <span>${s.day}${isToday ? ' (today)' : ''}</span>
+                        <span class="milestone-detail">${s.type}</span>
                     </li>
                 `;
             });
 
             html += '</ul>';
-
-            if (phase.restrictions.length > 0) {
-                html += '<div class="restrictions-list">';
-                phase.restrictions.forEach(r => {
-                    html += `<span class="restriction-badge">⚠ ${r}</span>`;
-                });
-                html += '</div>';
-            }
-
             document.getElementById('recovery-card').innerHTML = html;
         }
 
